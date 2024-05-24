@@ -5,59 +5,25 @@ project(eVision)
 
 # Source files
 set(SOURCE_FILES main.cpp)
+set(LIB_PATH ./lib)
 
 #Specify the executable
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
-
-
-#External libraries
-add_subdirectory(ext/gstreamer)
-add_subdirectory(ext/opencv)
-# add_subdirectory(ext/opencv_contrib)
-
-include_directories(${PROJECT_NAME} 
-    ext/gstreamer/include
-    ext/opencv/include
-    )
-
-# target_link_directories(${PROJECT_NAME}
-#     PRIVATE ext/opencv/lib
-# )
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(gtk3 REQUIRED IMPORTED_TARGET gtk+-3.0)
+pkg_check_modules(opencv REQUIRED IMPORTED_TARGET opencv4)
+pkg_search_module(gstreamer REQUIRED IMPORTED_TARGET gstreamer-1.0)
+pkg_search_module(glib REQUIRED IMPORTED_TARGET glib-2.0)
+pkg_search_module(gstreamer-sdp REQUIRED IMPORTED_TARGET gstreamer-sdp-1.0>=1.4)
+pkg_search_module(gstreamer-app REQUIRED IMPORTED_TARGET gstreamer-app-1.0>=1.4)
+pkg_search_module(gstreamer-video REQUIRED IMPORTED_TARGET gstreamer-video-1.0>=1.4)
 
 target_link_libraries(${PROJECT_NAME}
-    PRIVATE gstreamer-1.0
-    PRIVATE opencv_core
-    # PRIVATE opencv_highgui
-    PRIVATE opencv_imgproc
-    # PRIVATE opencv_imgcodecs
-    # PRIVATE opencv_videoio
-    # PRIVATE opencv_video
-    PRIVATE opencv_calib3d
-    # PRIVATE opencv_features2d
-    # PRIVATE opencv_flann
-    # PRIVATE opencv_ml
-    # PRIVATE opencv_objdetect
-    # PRIVATE opencv_photo
-    # PRIVATE opencv_shape
-    # PRIVATE opencv_stitching
-    # PRIVATE opencv_superres
-    # PRIVATE opencv_videostab
-    # PRIVATE opencv_dnn
-    # PRIVATE opencv_dnn_objdetect
-    # PRIVATE opencv_dpm
-    # PRIVATE opencv_face
-    # PRIVATE opencv_text
-    # PRIVATE opencv_tracking
-    # PRIVATE opencv_xfeatures2d
-    # PRIVATE opencv_ximgproc
-    # PRIVATE opencv_xobjdetect
-    # PRIVATE opencv_aruco
-    # PRIVATE opencv_bgsegm
-    # PRIVATE opencv_bioinspired
-    # PRIVATE opencv_ccalib
-    # PRIVATE opencv_datasets
-    # PRIVATE opencv_dnn_superres
-    # PRIVATE opencv_dnn_text_detection
-    # PRIVATE opencv_dnn_text_recognition
-    )
+    PkgConfig::gtk3
+    PkgConfig::gstreamer
+    PkgConfig::glib
+    PkgConfig::gstreamer-sdp
+    PkgConfig::gstreamer-app
+    PkgConfig::gstreamer-video
+)
