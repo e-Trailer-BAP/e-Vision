@@ -56,3 +56,5 @@ python/venv/
 cpp/src/lib/
 cpp/build/
 [Bb][Uu][Ii][Ll][Dd]/
+
+.vscode/
