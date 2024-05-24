@@ -1,6 +1,0 @@
-[submodule "cpp/src/ext/opencv"]
-	path = cpp/src/ext/opencv
-	url = https://github.com/opencv/opencv.git
-[submodule "cpp/src/ext/gstreamer"]
-	path = cpp/src/ext/gstreamer
-	url = https://github.com/GStreamer/gstreamer.git
