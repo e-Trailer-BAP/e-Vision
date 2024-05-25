@@ -1,4 +1,5 @@
 #include <opencv2/opencv.hpp>
+#include <yaml-cpp/yaml.h>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -15,7 +16,7 @@ using namespace std;
 
 // Declare global variables and constants
 std::vector<std::string> camera_names = {"front", "back", "left", "right"};
-std::string data_path = "../../data"; // Set your data path here
+std::string data_path = "C:/Users/Infer/Documents/Git/BAP/e-Vision/data"; // Set your data path here
 // std::string output_path = "/path/to/your/output"; // Set your output path here
 
 // --------------------------------------------------------------------
@@ -98,28 +99,48 @@ public:
 
     void load_camera_params()
     {
-        cv::FileStorage fs(camera_file, cv::FileStorage::READ);
-        fs["camera_matrix"] >> camera_matrix;
-        fs["dist_coeffs"] >> dist_coeffs;
-        fs["resolution"] >> resolution;
-        resolution = resolution.reshape(1, 2); // Ensure resolution is 1x2
+        YAML::Node config = YAML::LoadFile(camera_file);
 
-        if (!fs["scale_xy"].empty())
+        auto readMatrix = [](const YAML::Node &node) -> cv::Mat
         {
-            fs["scale_xy"] >> scale_xy;
+            std::vector<double> data = node["data"].as<std::vector<double>>();
+            int rows = node["rows"].as<int>();
+            int cols = node["cols"].as<int>();
+            cv::Mat mat(rows, cols, CV_64F, data.data());
+            return mat.clone(); // Ensure the data is properly managed
+        };
+
+        try
+        {
+            camera_matrix = readMatrix(config["camera_matrix"]);
+            dist_coeffs = readMatrix(config["dist_coeffs"]);
+
+            std::vector<int> res = config["resolution"].as<std::vector<int>>();
+            resolution = cv::Mat(res).reshape(1, 2); // Ensure resolution is 1x2
+
+            if (config["scale_xy"])
+            {
+                std::vector<float> scale = config["scale_xy"].as<std::vector<float>>();
+                scale_xy = cv::Point2f(scale[0], scale[1]);
+            }
+
+            if (config["shift_xy"])
+            {
+                std::vector<float> shift = config["shift_xy"].as<std::vector<float>>();
+                shift_xy = cv::Point2f(shift[0], shift[1]);
+            }
+
+            if (config["project_matrix"])
+            {
+                project_matrix = readMatrix(config["project_matrix"]);
+            }
+        }
+        catch (const YAML::Exception &e)
+        {
+            std::cerr << "Error reading YAML file: " << e.what() << std::endl;
+            throw std::runtime_error("Failed to load camera parameters from file: " + camera_file);
         }
 
-        if (!fs["shift_xy"].empty())
-        {
-            fs["shift_xy"] >> shift_xy;
-        }
-
-        if (!fs["project_matrix"].empty())
-        {
-            fs["project_matrix"] >> project_matrix;
-        }
-
-        fs.release();
         this->update_undistort_maps();
     }
 
@@ -346,11 +367,11 @@ public:
         this->frames = images;
     }
 
-    cv::Mat BirdView::merge(const cv::Mat &imA, const cv::Mat &imB, int k)
+    cv::Mat merge(const cv::Mat &imA, const cv::Mat &imB, int k)
     {
         cv::Mat G = this->weights[k];
-        cv::Mat merged;
-        cv::Mat blended = imA.mul(G) + imB.mul(1 - G);
+        cv::Mat blended, merged;
+        cv::add(imA.mul(G), imB.mul(1 - G), blended);
         blended.convertTo(merged, CV_8UC3);
         return merged;
     }
