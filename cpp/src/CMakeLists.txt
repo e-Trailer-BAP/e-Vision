@@ -5,7 +5,6 @@ project(eVision)
 
 # Source files
 set(SOURCE_FILES main.cpp)
-set(LIB_PATH ./lib)
 
 #Specify the executable
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
