@@ -58,14 +58,19 @@ std::map<std::string, std::vector<cv::Point>> project_keypoints = {
 
 std::string car_image_path = data_path + "/images/car.png";
 cv::Mat car_image = cv::imread(car_image_path);
+void load_car_image()
+{
+    std::string car_image_path = data_path + "/images/car.png";
+    car_image = cv::imread(car_image_path);
 
-if (!car_image.empty())
-{
-    cv::resize(car_image, car_image, cv::Size(xr - xl, yb - yt));
-}
-else
-{
-    std::cerr << "Error: Unable to load car image: " << car_image_path << std::endl;
+    if (!car_image.empty())
+    {
+        cv::resize(car_image, car_image, cv::Size(xr - xl, yb - yt));
+    }
+    else
+    {
+        std::cerr << "Error: Unable to load car image: " << car_image_path << std::endl;
+    }
 }
 
 class FisheyeCameraModel
@@ -341,11 +346,12 @@ public:
         this->frames = images;
     }
 
-    cv::Mat merge(const cv::Mat &imA, const cv::Mat &imB, int k)
+    cv::Mat BirdView::merge(const cv::Mat &imA, const cv::Mat &imB, int k)
     {
         cv::Mat G = this->weights[k];
         cv::Mat merged;
-        (imA.mul(G) + imB.mul(1 - G)).convertTo(merged, CV_8UC3);
+        cv::Mat blended = imA.mul(G) + imB.mul(1 - G);
+        blended.convertTo(merged, CV_8UC3);
         return merged;
     }
 
@@ -527,6 +533,9 @@ private:
 
 void main_function()
 {
+    // Load the car image
+    load_car_image();
+
     // Initialize camera names and paths to images and YAML files
     std::vector<std::string> names = camera_names;
     std::vector<std::string> images;
