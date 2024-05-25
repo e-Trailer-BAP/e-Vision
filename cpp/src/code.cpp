@@ -1,4 +1,4 @@
-#include <opencv2/core.hpp>
+#include <opencv2/opencv.hpp>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -9,12 +9,14 @@
 #include <fstream>
 #include <filesystem>
 
+// Use OpenCV namespaces to avoid qualifying every OpenCV function call with "cv::"
 using namespace cv;
 using namespace std;
 
 // Declare global variables and constants
 std::vector<std::string> camera_names = {"front", "back", "left", "right"};
 std::string data_path = "../../data"; // Set your data path here
+// std::string output_path = "/path/to/your/output"; // Set your output path here
 
 // --------------------------------------------------------------------
 // (shift_width, shift_height): how far away the birdview looks outside
@@ -71,7 +73,7 @@ class FisheyeCameraModel
 public:
     FisheyeCameraModel(const std::string &camera_param_file, const std::string &camera_name)
     {
-        if (!cv::utils::fs::exists(camera_param_file))
+        if (!std::filesystem::exists(camera_param_file))
         {
             throw std::runtime_error("Cannot find camera param file");
         }
@@ -241,32 +243,32 @@ double meanLuminanceRatio(const Mat &grayA, const Mat &grayB, const Mat &mask)
 Mat getMask(const Mat &img)
 {
     Mat gray, mask;
-    cvtColor(img, gray, COLOR_BGR2GRAY);
-    threshold(gray, mask, 0, 255, THRESH_BINARY);
+    cv::cvtColor(img, gray, cv::COLOR_BGR2GRAY);
+    cv::threshold(gray, mask, 0, 255, cv::THRESH_BINARY);
     return mask;
 }
 
 Mat getOverlapRegionMask(const Mat &imA, const Mat &imB)
 {
     Mat overlap, mask;
-    bitwise_and(imA, imB, overlap);
+    cv::bitwise_and(imA, imB, overlap);
     mask = getMask(overlap);
-    dilate(mask, mask, getStructuringElement(MORPH_RECT, Size(2, 2)), Point(-1, -1), 2);
+    cv::dilate(mask, mask, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(2, 2)), cv::Point(-1, -1), 2);
     return mask;
 }
 
 vector<Point> getOutmostPolygonBoundary(const Mat &img)
 {
     Mat mask = getMask(img);
-    dilate(mask, mask, getStructuringElement(MORPH_RECT, Size(2, 2)), Point(-1, -1), 2);
+    cv::dilate(mask, mask, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(2, 2)), cv::Point(-1, -1), 2);
     vector<vector<Point>> contours;
-    findContours(mask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
+    cv::findContours(mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
     vector<Point> largestContour = *max_element(contours.begin(), contours.end(), [](const vector<Point> &a, const vector<Point> &b)
-                                                { return contourArea(a) < contourArea(b); });
+                                                { return cv::contourArea(a) < cv::contourArea(b); });
 
     vector<Point> polygon;
-    approxPolyDP(largestContour, polygon, 0.009 * arcLength(largestContour, true), true);
+    cv::approxPolyDP(largestContour, polygon, 0.009 * cv::arcLength(largestContour, true), true);
 
     return polygon;
 }
@@ -275,11 +277,11 @@ pair<Mat, Mat> getWeightMaskMatrix(const Mat &imA, const Mat &imB, double distTh
 {
     Mat overlapMask = getOverlapRegionMask(imA, imB);
     Mat overlapMaskInv;
-    bitwise_not(overlapMask, overlapMaskInv);
+    cv::bitwise_not(overlapMask, overlapMaskInv);
 
     Mat imA_diff, imB_diff;
-    bitwise_and(imA, imA, imA_diff, overlapMaskInv);
-    bitwise_and(imB, imB, imB_diff, overlapMaskInv);
+    cv::bitwise_and(imA, imA, imA_diff, overlapMaskInv);
+    cv::bitwise_and(imB, imB, imB_diff, overlapMaskInv);
 
     Mat G = getMask(imA);
     G.convertTo(G, CV_32F, 1.0 / 255.0);
@@ -294,10 +296,10 @@ pair<Mat, Mat> getWeightMaskMatrix(const Mat &imA, const Mat &imB, double distTh
             if (overlapMask.at<uchar>(y, x) == 255)
             {
                 Point2f pt(x, y);
-                double distToB = pointPolygonTest(polyB, pt, true);
+                double distToB = cv::pointPolygonTest(polyB, pt, true);
                 if (distToB < distThreshold)
                 {
-                    double distToA = pointPolygonTest(polyA, pt, true);
+                    double distToA = cv::pointPolygonTest(polyA, pt, true);
                     distToB *= distToB;
                     distToA *= distToA;
                     G.at<float>(y, x) = distToB / (distToA + distToB);
@@ -312,8 +314,8 @@ pair<Mat, Mat> getWeightMaskMatrix(const Mat &imA, const Mat &imB, double distTh
 Mat makeWhiteBalance(const Mat &image)
 {
     vector<Mat> channels;
-    split(image, channels);
-    Scalar means = mean(image);
+    cv::split(image, channels);
+    Scalar means = cv::mean(image);
     double K = (means[0] + means[1] + means[2]) / 3.0;
 
     channels[0] = adjustLuminance(channels[0], K / means[0]);
@@ -321,7 +323,7 @@ Mat makeWhiteBalance(const Mat &image)
     channels[2] = adjustLuminance(channels[2], K / means[2]);
 
     Mat balancedImage;
-    merge(channels, balancedImage);
+    cv::merge(channels, balancedImage);
     return balancedImage;
 }
 
@@ -342,7 +344,9 @@ public:
     cv::Mat merge(const cv::Mat &imA, const cv::Mat &imB, int k)
     {
         cv::Mat G = this->weights[k];
-        return (imA.mul(G) + imB.mul(1 - G)).convertTo(cv::Mat(), CV_8UC3);
+        cv::Mat merged;
+        (imA.mul(G) + imB.mul(1 - G)).convertTo(merged, CV_8UC3);
+        return merged;
     }
 
     cv::Mat FL() const { return this->image(cv::Rect(0, 0, xl, yt)); }
@@ -464,10 +468,10 @@ public:
         right_channels[1] = adjustLuminance(right_channels[1], w2);
         right_channels[2] = adjustLuminance(right_channels[2], w3);
 
-        frames[0] = cv::merge(front_channels);
-        frames[1] = cv::merge(back_channels);
-        frames[2] = cv::merge(left_channels);
-        frames[3] = cv::merge(right_channels);
+        cv::merge(front_channels, frames[0]);
+        cv::merge(back_channels, frames[1]);
+        cv::merge(left_channels, frames[2]);
+        cv::merge(right_channels, frames[3]);
 
         return *this;
     }
@@ -572,9 +576,9 @@ void main_function()
     cv::imshow("BirdView", birdview.getImage());
     cv::waitKey(0);
 
-    // Uncomment the following lines if you want to save weights and masks images
-    // cv::imwrite("weights.png", Gmat * 255);
-    // cv::imwrite("masks.png", Mmat);
+    // // Save weights and masks images to the output path
+    // cv::imwrite(output_path + "/weights.png", Gmat * 255);
+    // cv::imwrite(output_path + "/masks.png", Mmat);
 }
 
 int main(int argc, char **argv)
