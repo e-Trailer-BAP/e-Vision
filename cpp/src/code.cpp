@@ -97,51 +97,49 @@ public:
         this->load_camera_params();
     }
 
+    cv::Mat readMatrixSimple(const YAML::Node &node)
+    {
+        int rows = node["rows"].as<int>();
+        int cols = node["cols"].as<int>();
+        std::vector<double> data = node["data"].as<std::vector<double>>();
+        cv::Mat mat(rows, cols, CV_64F, data.data());
+        return mat.clone(); // Ensure the data is properly managed
+    }
+
+    cv::Point2f readPoint2fSimple(const YAML::Node &node)
+    {
+        std::vector<float> data = node["data"].as<std::vector<float>>();
+        if (data.size() != 2)
+        {
+            throw std::runtime_error("Expected a 2-element sequence for Point2f");
+        }
+        return cv::Point2f(data[0], data[1]);
+    }
+
     void load_camera_params()
     {
         YAML::Node config = YAML::LoadFile(camera_file);
 
-        auto readMatrix = [](const YAML::Node &node) -> cv::Mat
-        {
-            std::vector<double> data = node["data"].as<std::vector<double>>();
-            int rows = node["rows"].as<int>();
-            int cols = node["cols"].as<int>();
-            cv::Mat mat(rows, cols, CV_64F, data.data());
-            return mat.clone(); // Ensure the data is properly managed
-        };
-
         try
         {
-            camera_matrix = readMatrix(config["camera_matrix"]);
-            dist_coeffs = readMatrix(config["dist_coeffs"]);
+            camera_matrix = readMatrixSimple(config["camera_matrix"]);
+            dist_coeffs = readMatrixSimple(config["dist_coeffs"]);
+            resolution = readMatrixSimple(config["resolution"]);
+            resolution = resolution.reshape(1, 2); // Ensure resolution is 1x2
 
-            std::vector<int> res = config["resolution"].as<std::vector<int>>();
-            resolution = cv::Mat(res).reshape(1, 2); // Ensure resolution is 1x2
+            scale_xy = readPoint2fSimple(config["scale_xy"]);
+            shift_xy = readPoint2fSimple(config["shift_xy"]);
 
-            if (config["scale_xy"])
-            {
-                std::vector<float> scale = config["scale_xy"].as<std::vector<float>>();
-                scale_xy = cv::Point2f(scale[0], scale[1]);
-            }
+            project_matrix = readMatrixSimple(config["project_matrix"]);
 
-            if (config["shift_xy"])
-            {
-                std::vector<float> shift = config["shift_xy"].as<std::vector<float>>();
-                shift_xy = cv::Point2f(shift[0], shift[1]);
-            }
-
-            if (config["project_matrix"])
-            {
-                project_matrix = readMatrix(config["project_matrix"]);
-            }
+            // Ensure the undistortion maps are updated
+            this->update_undistort_maps();
         }
         catch (const YAML::Exception &e)
         {
             std::cerr << "Error reading YAML file: " << e.what() << std::endl;
             throw std::runtime_error("Failed to load camera parameters from file: " + camera_file);
         }
-
-        this->update_undistort_maps();
     }
 
     void update_undistort_maps()
