@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.10.0)
 project(eVision)
 
 # Source files
-set(SOURCE_FILES main.cpp)
+set(SOURCE_FILES code.cpp)
 
 #Specify the executable
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
@@ -20,6 +20,7 @@ pkg_search_module(gstreamer-video REQUIRED IMPORTED_TARGET gstreamer-video-1.0>=
 
 target_link_libraries(${PROJECT_NAME}
     PkgConfig::gtk3
+    PkgConfig::opencv
     PkgConfig::gstreamer
     PkgConfig::glib
     PkgConfig::gstreamer-sdp
