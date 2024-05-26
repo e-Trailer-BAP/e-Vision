@@ -16,7 +16,7 @@ using namespace std;
 
 // Declare global variables and constants
 std::vector<std::string> camera_names = {"front", "back", "left", "right"};
-std::string data_path = "C:/Users/Infer/Documents/Git/BAP/e-Vision/data"; // Set your data path here
+std::string data_path = "../../data"; // Set your data path here
 // std::string output_path = "/path/to/your/output"; // Set your output path here
 
 // --------------------------------------------------------------------
@@ -149,9 +149,11 @@ public:
         new_matrix.at<double>(1, 1) *= scale_xy.y;
         new_matrix.at<double>(0, 2) += shift_xy.x;
         new_matrix.at<double>(1, 2) += shift_xy.y;
-        int width = resolution.at<int>(0);
-        int height = resolution.at<int>(1);
 
+        int width = static_cast<int>(resolution.at<double>(0, 0));
+        int height = static_cast<int>(resolution.at<double>(0, 1));
+
+        cv::Mat ud1, ud2;
         cv::fisheye::initUndistortRectifyMap(
             camera_matrix,
             dist_coeffs,
@@ -159,8 +161,10 @@ public:
             new_matrix,
             cv::Size(width, height),
             CV_16SC2,
-            undistort_map1,
-            undistort_map2);
+            ud1,
+            ud2);
+        undistort_map1 = ud1.clone();
+        undistort_map2 = ud2.clone();
     }
 
     FisheyeCameraModel &set_scale_and_shift(cv::Point2f scale_xy = {1.0, 1.0}, cv::Point2f shift_xy = {0, 0})
@@ -367,21 +371,56 @@ public:
 
     cv::Mat merge(const cv::Mat &imA, const cv::Mat &imB, int k)
     {
-        cv::Mat G = this->weights[k];
-        cv::Mat blended, merged;
-        cv::add(imA.mul(G), imB.mul(1 - G), blended);
-        blended.convertTo(merged, CV_8UC3);
+        // Ensure k is a valid index
+        if (k < 0 || k >= weights.size())
+        {
+            throw std::out_of_range("Invalid index for weights.");
+        }
+
+        cv::Mat G = weights[k];
+
+        // Ensure that the input images have the same size and type
+        CV_Assert(imA.size() == imB.size());
+        CV_Assert(imA.channels() == imB.channels());
+
+        // If G is single channel and imA/imB are multi-channel, replicate G across channels
+        if (G.channels() == 1 && imA.channels() > 1)
+        {
+            cv::Mat channels[3];
+            for (int i = 0; i < 3; ++i)
+            {
+                channels[i] = G;
+            }
+            cv::merge(channels, 3, G);
+        }
+
+        // Convert images and G to double for accurate calculations
+        cv::Mat imA_double, imB_double, G_double;
+        imA.convertTo(imA_double, CV_64F);
+        imB.convertTo(imB_double, CV_64F);
+        G.convertTo(G_double, CV_64F);
+
+        // Perform the weighted merge
+        cv::Mat merged = imA_double.mul(G_double) + imB_double.mul(cv::Scalar(1.0, 1.0, 1.0) - G_double);
+
+        // Convert back to uint8
+        merged.convertTo(merged, CV_8U);
+
         return merged;
     }
 
-    cv::Mat FL() const { return this->image(cv::Rect(0, 0, xl, yt)); }
+    cv::Mat
+    FL() const
+    {
+        return this->image(cv::Rect(0, 0, xl, yt));
+    }
     cv::Mat F() const { return this->image(cv::Rect(xl, 0, xr - xl, yt)); }
-    cv::Mat FR() const { return this->image(cv::Rect(xr, 0, this->image.cols - xr, yt)); }
-    cv::Mat BL() const { return this->image(cv::Rect(0, yb, xl, this->image.rows - yb)); }
-    cv::Mat B() const { return this->image(cv::Rect(xl, yb, xr - xl, this->image.rows - yb)); }
-    cv::Mat BR() const { return this->image(cv::Rect(xr, yb, this->image.cols - xr, this->image.rows - yb)); }
+    cv::Mat FR() const { return this->image(cv::Rect(xr, 0, xl, yt)); }
+    cv::Mat BL() const { return this->image(cv::Rect(0, yb, xl, yt)); }
+    cv::Mat B() const { return this->image(cv::Rect(xl, yb, xr - xl, yt)); }
+    cv::Mat BR() const { return this->image(cv::Rect(xr, yb, xl, yt)); }
     cv::Mat L() const { return this->image(cv::Rect(0, yt, xl, yb - yt)); }
-    cv::Mat R() const { return this->image(cv::Rect(xr, yt, this->image.cols - xr, yb - yt)); }
+    cv::Mat R() const { return this->image(cv::Rect(xr, yt, xl, yb - yt)); }
     cv::Mat C() const { return this->image(cv::Rect(xl, yt, xr - xl, yb - yt)); }
 
     void stitch_all_parts()
@@ -392,14 +431,14 @@ public:
         const auto &right = frames[3];
 
         front(cv::Rect(xl, 0, xr - xl, yt)).copyTo(this->F());
-        back(cv::Rect(xl, yb, xr - xl, back.rows - yb)).copyTo(this->B());
+        back(cv::Rect(xl, 0, xr - xl, yt)).copyTo(this->B());
         left(cv::Rect(0, yt, xl, yb - yt)).copyTo(this->L());
-        right(cv::Rect(xr, yt, right.cols - xr, yb - yt)).copyTo(this->R());
+        right(cv::Rect(0, yt, xl, yb - yt)).copyTo(this->R());
 
         this->merge(front(cv::Rect(0, 0, xl, yt)), left(cv::Rect(0, 0, xl, yt)), 0).copyTo(this->FL());
-        this->merge(front(cv::Rect(xr, 0, front.cols - xr, yt)), right(cv::Rect(0, 0, xl, yt)), 1).copyTo(this->FR());
-        this->merge(back(cv::Rect(0, yb, xl, back.rows - yb)), left(cv::Rect(yb, 0, xl, left.rows - yb)), 2).copyTo(this->BL());
-        this->merge(back(cv::Rect(xr, yb, back.cols - xr, back.rows - yb)), right(cv::Rect(yb, 0, xl, right.rows - yb)), 3).copyTo(this->BR());
+        this->merge(front(cv::Rect(xr, 0, xl, yt)), right(cv::Rect(0, 0, xl, yt)), 1).copyTo(this->FR());
+        this->merge(back(cv::Rect(0, 0, xl, yt)), left(cv::Rect(0, yb, xl, yt)), 2).copyTo(this->BL());
+        this->merge(back(cv::Rect(xr, 0, xl, yt)), right(cv::Rect(0, yb, xl, yt)), 3).copyTo(this->BR());
     }
 
     void copy_car_image()
@@ -536,18 +575,18 @@ private:
     std::vector<cv::Mat> weights;
     std::vector<cv::Mat> masks;
 
-    cv::Mat FI(const cv::Mat &img) const { return img(cv::Rect(0, 0, xl, img.rows)); }
-    cv::Mat FII(const cv::Mat &img) const { return img(cv::Rect(xr, 0, img.cols - xr, img.rows)); }
-    cv::Mat FM(const cv::Mat &img) const { return img(cv::Rect(xl, 0, xr - xl, img.rows)); }
-    cv::Mat BIII(const cv::Mat &img) const { return img(cv::Rect(0, 0, xl, img.rows)); }
-    cv::Mat BIV(const cv::Mat &img) const { return img(cv::Rect(xr, 0, img.cols - xr, img.rows)); }
-    cv::Mat BM(const cv::Mat &img) const { return img(cv::Rect(xl, 0, xr - xl, img.rows)); }
-    cv::Mat LI(const cv::Mat &img) const { return img(cv::Rect(0, 0, img.cols, yt)); }
-    cv::Mat LIII(const cv::Mat &img) const { return img(cv::Rect(0, yb, img.cols, img.rows - yb)); }
-    cv::Mat LM(const cv::Mat &img) const { return img(cv::Rect(0, yt, img.cols, yb - yt)); }
-    cv::Mat RII(const cv::Mat &img) const { return img(cv::Rect(0, 0, img.cols, yt)); }
-    cv::Mat RIV(const cv::Mat &img) const { return img(cv::Rect(0, yb, img.cols, img.rows - yb)); }
-    cv::Mat RM(const cv::Mat &img) const { return img(cv::Rect(0, yt, img.cols, yb - yt)); }
+    cv::Mat FI(const cv::Mat &img) const { return img(cv::Rect(0, 0, xl, yt)); }
+    cv::Mat FII(const cv::Mat &img) const { return img(cv::Rect(xr, 0, xl, yt)); }
+    cv::Mat FM(const cv::Mat &img) const { return img(cv::Rect(xl, 0, xr - xl, yt)); }
+    cv::Mat BIII(const cv::Mat &img) const { return img(cv::Rect(0, 0, xl, yt)); }
+    cv::Mat BIV(const cv::Mat &img) const { return img(cv::Rect(xr, 0, xl, yt)); }
+    cv::Mat BM(const cv::Mat &img) const { return img(cv::Rect(xl, 0, xr - xl, yt)); }
+    cv::Mat LI(const cv::Mat &img) const { return img(cv::Rect(0, 0, xl, yt)); }
+    cv::Mat LIII(const cv::Mat &img) const { return img(cv::Rect(0, yb, xl, yt)); }
+    cv::Mat LM(const cv::Mat &img) const { return img(cv::Rect(0, yt, xl, yb - yt)); }
+    cv::Mat RII(const cv::Mat &img) const { return img(cv::Rect(0, 0, xl, yt)); }
+    cv::Mat RIV(const cv::Mat &img) const { return img(cv::Rect(0, yb, xl, yt)); }
+    cv::Mat RM(const cv::Mat &img) const { return img(cv::Rect(0, yt, xl, yb - yt)); }
 };
 
 void main_function()
