@@ -16,8 +16,8 @@ using namespace std;
 
 // Declare global variables and constants
 std::vector<std::string> camera_names = {"front", "back", "left", "right"};
-std::string data_path = "../../data"; // Set your data path here
-// std::string output_path = "/path/to/your/output"; // Set your output path here
+std::string data_path = "../../data";          // Set your data path here
+std::string output_path = "../../data/output"; // Set your output path here
 
 // --------------------------------------------------------------------
 // (shift_width, shift_height): how far away the birdview looks outside
@@ -643,9 +643,8 @@ void main_function()
     cv::imshow("BirdView", birdview.getImage());
     cv::waitKey(0);
 
-    // // Save weights and masks images to the output path
-    // cv::imwrite(output_path + "/weights.png", Gmat * 255);
-    // cv::imwrite(output_path + "/masks.png", Mmat);
+    // Save image
+    cv::imwrite(output_path + "/birdview.png", birdview.getImage());
 }
 
 int main(int argc, char **argv)
