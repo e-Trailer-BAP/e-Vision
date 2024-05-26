@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.10.0)
 project(eVision)
 
 # Source files
-set(SOURCE_FILES code.cpp)
+set(SOURCE_FILES video.cpp)
 
 #Specify the executable
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
