@@ -16,8 +16,8 @@ using namespace std;
 
 // Declare global variables and constants
 std::vector<std::string> camera_names = {"front", "back", "left", "right"};
-std::string data_path = "../../data";          // Set your data path here
-std::string output_path = "../../data/output"; // Set your output path here
+std::string data_path = "../../../data";          // Set your data path here
+std::string output_path = "../../../data/output"; // Set your output path here
 
 // --------------------------------------------------------------------
 // (shift_width, shift_height): how far away the birdview looks outside
