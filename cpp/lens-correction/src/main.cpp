@@ -151,9 +151,56 @@ void process_video(const vector<string> &input_videos, const string &data_path, 
     cout << "Output video saved to " << output_path + "/birds_eye_view.mp4" << endl;
 }
 
+void process_stream(const FisheyeCameraModel& camera_model)
+{
+    // Open the OBS Virtual Webcam (usually at index 1, adjust if necessary)
+    cv::VideoCapture cap(3);
+
+    // Check if the webcam is opened correctly
+    if (!cap.isOpened()) {
+        std::cerr << "Error: Could not open video stream from OBS Virtual Webcam" << std::endl;
+    }
+
+    cv::Mat frame;
+    while (true) {
+        // Capture frame-by-frame
+        cap >> frame;
+
+        //cout << "Frame Size" << frame.size() << endl;
+
+        // If the frame is empty, break immediately
+        if (frame.empty()) {
+            std::cerr << "Error: Failed to capture image" << std::endl;
+            break;
+        }
+
+        // Resize the frame to your desired resolution
+        cv::Size desired_size(960, 640); // Your desired resolution
+        cv::resize(frame, frame, desired_size);
+        
+        frame = camera_model.undistort(frame);
+        frame = camera_model.project(frame);
+        frame = camera_model.flip(frame);
+
+        // Display the resulting frame
+        cv::imshow("OBS Virtual Webcam", frame);
+
+        // Break the loop on 'q' key press
+        if (cv::waitKey(1) == 'q') {
+            break;
+        }
+    }
+
+    // When everything is done, release the capture
+    cap.release();
+
+    // Close all OpenCV windows
+    cv::destroyAllWindows();
+}
+
 int main()
 {
-    string mode = "image";
+    string mode = "stream";
     vector<string> camera_names = {"front", "back", "left", "right"};
     vector<string> yamls;
     vector<string> images;
@@ -180,9 +227,15 @@ int main()
         camera_models.emplace_back(yamls[i], camera_names[i]);
     }
 
+    const FisheyeCameraModel& selected_camera_model = camera_models[0]; // Replace 'index' with the desired index
+
     if (mode == "video")
     {
         process_video(videos, data_path, output_path, camera_models);
+    }
+    else if (mode == "stream")
+    {
+        process_stream(selected_camera_model);
     }
     else
     {
