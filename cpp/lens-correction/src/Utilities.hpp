@@ -3,17 +3,20 @@
 
 #include <opencv2/opencv.hpp>
 
-std::map<std::string, cv::Size> init_constants();
-cv::Mat convertBinaryToBool(const cv::Mat &mask);
-cv::Mat adjustLuminance(const cv::Mat &gray, double factor);
-double getMeanStatistic(const cv::Mat &gray, const cv::Mat &mask);
-double meanLuminanceRatio(const cv::Mat &grayA, const cv::Mat &grayB, const cv::Mat &mask);
-cv::Mat getMask(const cv::Mat &img);
-cv::Mat getOverlapRegionMask(const cv::Mat &imA, const cv::Mat &imB);
-std::vector<cv::Point> getOutmostPolygonBoundary(const cv::Mat &img);
-std::pair<cv::Mat, cv::Mat> getWeightMaskMatrix(const cv::Mat &imA, const cv::Mat &imB, double distThreshold = 5);
-cv::Mat makeWhiteBalance(const cv::Mat &image);
-// void process_image(const std::vector<std::string> &images, const std::string &output_path, const std::vector<FisheyeCameraModel> &camera_models);
-// void process_video(const std::vector<std::string> &input_videos, const std::string &output_path, const std::vector<FisheyeCameraModel> &camera_models);
+using namespace std;
+using namespace cv;
+
+map<string, Size> init_constants();
+Mat convertBinaryToBool(const Mat &mask);
+Mat adjustLuminance(const Mat &gray, double factor);
+double getMeanStatistic(const Mat &gray, const Mat &mask);
+double meanLuminanceRatio(const Mat &grayA, const Mat &grayB, const Mat &mask);
+Mat getMask(const Mat &img);
+Mat getOverlapRegionMask(const Mat &imA, const Mat &imB);
+vector<Point> getOutmostPolygonBoundary(const Mat &img);
+pair<Mat, Mat> getWeightMaskMatrix(const Mat &imA, const Mat &imB, double distThreshold = 5);
+Mat makeWhiteBalance(const Mat &image);
+// void process_image(const vector<string> &images, const string &output_path, const vector<FisheyeCameraModel> &camera_models);
+// void process_video(const vector<string> &input_videos, const string &output_path, const vector<FisheyeCameraModel> &camera_models);
 
 #endif // UTILITIES_HPP
