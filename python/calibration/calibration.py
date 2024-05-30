@@ -179,7 +179,7 @@ def main():
         rvecs = [np.zeros((1, 1, 3), dtype=np.float64) for _ in range(N_OK)]
         tvecs = [np.zeros((1, 1, 3), dtype=np.float64) for _ in range(N_OK)]
         calibration_flags = (cv2.fisheye.CALIB_RECOMPUTE_EXTRINSIC +
-                             cv2.fisheye.CALIB_CHECK_COND +
+                             #cv2.fisheye.CALIB_CHECK_COND +
                              cv2.fisheye.CALIB_FIX_SKEW)
 
         # Use fisheye calibration if specified
