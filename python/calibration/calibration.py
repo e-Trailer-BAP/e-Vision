@@ -61,6 +61,9 @@ def main():
     
     args = parser.parse_args()
 
+    if args.fisheye:
+        print('Fisheye camera installed')
+
     # Create target directory if it doesn't exist
     if not os.path.exists(TARGET_DIR):
         os.mkdir(TARGET_DIR)
