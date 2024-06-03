@@ -33,7 +33,7 @@ def main():
     #                     help="input camera device")
     
     # Chessboard pattern size
-    parser.add_argument("-grid", "--grid", default="9x6",
+    parser.add_argument("-grid", "--grid", default="6x9",
                         help="size of the calibrate grid pattern")
     
     # Camera resolution
@@ -90,7 +90,7 @@ def main():
     imgpoints = []  # 2d points in image plane
 
     # Open the OBS Virtual Webcam (usually at index 1, adjust if necessary)
-    cap = cv2.VideoCapture(1)
+    cap = cv2.VideoCapture(0)
 
     # Check if the webcam is opened correctly
     if not cap.isOpened():
@@ -138,12 +138,15 @@ def main():
             cv2.CALIB_CB_FILTER_QUADS
         )
         if found:
-            term = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_COUNT, 30, 0.01)
-            cv2.cornerSubPix(gray, corners, (5, 5), (-1, -1), term)
+            term = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.1)
+            cv2.cornerSubPix(gray, corners, (3, 3), (-1, -1), term)
             print("OK")
             imgpoints.append(corners)
             objpoints.append(grid_points)
             cv2.drawChessboardCorners(img, grid_size, corners, found)
+            filename = f"C:/Users/Infer/Documents/Git/BAP/e-Vision/data/calib_data/frame_{len(objpoints)}.jpg"  # Save frames in the specified directory
+            cv2.imwrite(filename, frame)
+            print(f"Saved frame {len(objpoints)}")
 
         # Display instructions on the frame
         cv2.putText(img, text1, (20, 70), font, fontscale, (255, 200, 0), 2)
