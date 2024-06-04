@@ -144,9 +144,9 @@ def main():
             imgpoints.append(corners)
             objpoints.append(grid_points)
             cv2.drawChessboardCorners(img, grid_size, corners, found)
-            filename = f"C:/Users/Infer/Documents/Git/BAP/e-Vision/data/calib_data/frame_{len(objpoints)}.jpg"  # Save frames in the specified directory
-            cv2.imwrite(filename, frame)
-            print(f"Saved frame {len(objpoints)}")
+            #filename = f"C:/Users/Infer/Documents/Git/BAP/e-Vision/data/calib_data/frame_{len(objpoints)}.jpg"  # Save frames in the specified directory
+            #cv2.imwrite(filename, frame)
+            #print(f"Saved frame {len(objpoints)}")
 
         # Display instructions on the frame
         cv2.putText(img, text1, (20, 70), font, fontscale, (255, 200, 0), 2)
