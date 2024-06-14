@@ -37,7 +37,7 @@ def main():
                         help="size of the calibrate grid pattern")
     
     # Camera resolution
-    parser.add_argument("-r", "--resolution", default="640x480",
+    parser.add_argument("-r", "--resolution", default="1920x1080",
                         help="resolution of the camera image")
     
     # Frame step for calibration
@@ -143,6 +143,9 @@ def main():
             print("OK")
             imgpoints.append(corners)
             objpoints.append(grid_points)
+            filename = f"C:/Users/Infer/Documents/Git/BAP/e-Vision/data/calib_data/frame_{len(objpoints)}.jpg"  # Save frames in the specified directory
+            cv2.imwrite(filename, frame)
+
             cv2.drawChessboardCorners(img, grid_size, corners, found)
             #filename = f"C:/Users/Infer/Documents/Git/BAP/e-Vision/data/calib_data/frame_{len(objpoints)}.jpg"  # Save frames in the specified directory
             #cv2.imwrite(filename, frame)
