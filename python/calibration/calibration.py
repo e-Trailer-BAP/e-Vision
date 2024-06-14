@@ -97,6 +97,10 @@ def main():
         print("Error: Could not open video stream from OBS Virtual Webcam")
         exit()
 
+    # Set camera resolution
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, W)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, H)
+
     # Main loop for capturing frames and detecting chessboard corners
     quit = False
     do_calib = False
@@ -116,6 +120,9 @@ def main():
 
         if i % args.framestep != 0:
             continue
+
+        if i == 20:
+            print(img.shape())
 
         # # Display the resulting frame
         # cv2.imshow('OBS Virtual Webcam', frame)
