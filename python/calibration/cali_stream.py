@@ -21,7 +21,9 @@ def undistort_frame(frame):
 
 def process_stream():
     # Open the OBS Virtual Webcam (usually at index 1, adjust if necessary)
-    cap = cv2.VideoCapture(2)
+    cap = cv2.VideoCapture(1)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 960)
 
     # Check if the webcam is opened correctly
     if not cap.isOpened():

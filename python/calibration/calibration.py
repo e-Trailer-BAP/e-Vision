@@ -5,7 +5,7 @@ Fisheye Camera calibration
 
 Usage:
     python calibration.py \
-        -grid 9x6 \
+        -grid 9x7 \
         -out fisheye.yaml \
         -framestep 20 \
         --resolution 640x480
@@ -33,11 +33,11 @@ def main():
     #                     help="input camera device")
     
     # Chessboard pattern size
-    parser.add_argument("-grid", "--grid", default="6x9",
+    parser.add_argument("-grid", "--grid", default="7x9",
                         help="size of the calibrate grid pattern")
     
     # Camera resolution
-    parser.add_argument("-r", "--resolution", default="1920x1080",
+    parser.add_argument("-r", "--resolution", default="1280x960",
                         help="resolution of the camera image")
     
     # Frame step for calibration
@@ -69,7 +69,7 @@ def main():
         os.mkdir(TARGET_DIR)
 
     # Display text for user interaction
-    text1 = "press c to calibrate"
+    # text1 = "press c to calibrate"
     text2 = "press q to quit"
     text3 = "device: webcam"
     font = cv2.FONT_HERSHEY_SIMPLEX
@@ -90,7 +90,7 @@ def main():
     imgpoints = []  # 2d points in image plane
 
     # Open the OBS Virtual Webcam (usually at index 1, adjust if necessary)
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
 
     # Check if the webcam is opened correctly
     if not cap.isOpened():
@@ -122,7 +122,7 @@ def main():
             continue
 
         if i == 20:
-            print(img.shape())
+            print(img.shape)
 
         # # Display the resulting frame
         # cv2.imshow('OBS Virtual Webcam', frame)
@@ -135,6 +135,8 @@ def main():
     # cap.release()
     # cv2.destroyAllWindows()
 
+        if i == 20:
+            print(img.shape)
         print("searching for chessboard corners in frame " + str(i) + "...")
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         found, corners = cv2.findChessboardCorners(
@@ -150,32 +152,32 @@ def main():
             print("OK")
             imgpoints.append(corners)
             objpoints.append(grid_points)
-            filename = f"C:/Users/Infer/Documents/Git/BAP/e-Vision/data/calib_data/frame_{len(objpoints)}.jpg"  # Save frames in the specified directory
-            cv2.imwrite(filename, frame)
+            # filename = f"C:/Users/Infer/Documents/TU Delft/BAP/e-Vision/data/calib_dataframe_{len(objpoints)}.jpg"  # Save frames in the specified directory
+            # cv2.imwrite(filename, frame)
+            # print(f"Saved frame {len(objpoints)}")
 
             cv2.drawChessboardCorners(img, grid_size, corners, found)
             #filename = f"C:/Users/Infer/Documents/Git/BAP/e-Vision/data/calib_data/frame_{len(objpoints)}.jpg"  # Save frames in the specified directory
             #cv2.imwrite(filename, frame)
-            #print(f"Saved frame {len(objpoints)}")
+            print(f"Saved frame {len(objpoints)}")
 
         # Display instructions on the frame
-        cv2.putText(img, text1, (20, 70), font, fontscale, (255, 200, 0), 2)
+        # cv2.putText(img, text1, (20, 70), font, fontscale, (255, 200, 0), 2)
         cv2.putText(img, text2, (20, 110), font, fontscale, (255, 200, 0), 2)
         cv2.putText(img, text3, (20, 30), font, fontscale, (255, 200, 0), 2)
         cv2.imshow("corners", img)
         
+
+        if len(objpoints) < 30:
+            print("Less than 30 corners (%d) detected, calibration failed" % (len(objpoints)))
+        else:
+            print("\nPerforming calibration...\n")
+            do_calib = True
+            break
+
         # Check for user input
         key = cv2.waitKey(1) & 0xFF
-        if key == ord("c"):
-            print("\nPerforming calibration...\n")
-            N_OK = len(objpoints)
-            if N_OK < 12:
-                print("Less than 12 corners (%d) detected, calibration failed" % (N_OK))
-                continue
-            else:
-                do_calib = True
-                break
-        elif key == ord("q"):
+        if key == ord("q"):
             quit = True
             break
 
