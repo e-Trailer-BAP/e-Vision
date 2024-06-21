@@ -51,18 +51,19 @@ def find_pink_squares(image_path):
     
     return centroids
 
-def find_solid_pink_polygons(imagepath, HRL, SRL, VRL, HRU, SRU, VRU):
+def find_solid_pink_polygons(image, HRL, SRL, VRL, HRU, SRU, VRU):
     # Load the image
-    image = cv2.imread(imagepath)
-    if image is None:
-        raise FileNotFoundError("The image file was not found.")
+    # image = cv2.imread(imagepath)
+    # if image is None:
+    #     raise FileNotFoundError("The image file was not found.")
     
     # Convert the image to the HSV color space
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     
-    H=132
-    S=255
-    V=159   # HR=30
+    H=150
+    S=144
+    V=229
+    # HR=30
     # SR=10
     # VR=30
     lower_pink=np.array([H-HRL, S-SRL, V-VRL])
@@ -96,10 +97,10 @@ def find_solid_pink_polygons(imagepath, HRL, SRL, VRL, HRU, SRU, VRU):
                 cv2.circle(image, (cX, cY), 5, (0, 255, 0), -1)  # Green for centroids
     
     # Display the image with the contours and centroids marked
-    cv2.imshow("Image with Contours and Centroids", image)
-    cv2.imwrite("C:/Users/Infer/Documents/TU Delft/BAP/e-Vision/data/images/cv-final.png", image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    # cv2.imshow("Image with Contours and Centroids", image)
+    # cv2.imwrite("C:/Users/Infer/Documents/TU Delft/BAP/e-Vision/data/images/cv-final.png", image)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
     
     return centroids, image
 
@@ -124,6 +125,6 @@ def hsvrgb(R, G, B):
     print("HSV values({}, {}, {}):".format(H, S, V))
     return H, S, V
 
-hsvrgb(159, 0, 64)
-# find_pink_squares("C:/Users/Infer/Documents/TU Delft/BAP/e-Vision/data/images/test.jpg")
-find_solid_pink_polygons('../../data/images/undistort-final.png', 00, 60, 90, 50, 00, 40)
+hsvrgb(220, 33, 216)
+# # find_pink_squares("C:/Users/Infer/Documents/TU Delft/BAP/e-Vision/data/images/test.jpg")
+# find_solid_pink_polygons('../../data/images/undistort-final.png', 00, 60, 90, 50, 00, 40)

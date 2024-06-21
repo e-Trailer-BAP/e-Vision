@@ -20,13 +20,16 @@ def process_stream():
             break
 
         # Undistort the frame
-        centers, image = utils.find_solid_pink_polygons(frame, 30, 0, 50)
+        centers, image = utils.find_solid_pink_polygons(frame, 20,20,50,20,20,40)
+        print(centers)
         # Display the resulting frame
         cv2.imshow("OBS Virtual Webcam", image)
 
         # Break the loop on 'q' key press
         if cv2.waitKey(1) == ord('q'):
             break
+        else:
+            continue
 
     # When everything is done, release the capture
     cap.release()
